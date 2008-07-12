@@ -1,0 +1,28 @@
+REQUIEMENTS:
+    nohup #default in most *NIX systems
+    Python
+    PyGTK ~ 2.0
+    bash
+    Linux
+
+INSTALL:
+    run install.sh as root
+    example:
+	sudo ./install.sh
+	or
+	su -c ./install.sh
+RUN:
+    just type pastie in your terminal or add activator
+    now program is in your tray (usually near clock),
+    just click it to show/hide window
+    
+PASTING:
+    just paste your code into text area (it automatically get focus when showing)
+    choose, and press paste
+    link to your code will be stored in clipboard
+    
+STUFF:
+    pastie is name of NOPASTE service, you can find it under pastie.org
+    icon is image used on front page of pastie
+
+All Python code is licensed under GNU GPL 3, for pastie.gif ask Josh Goebel from pastie.org,

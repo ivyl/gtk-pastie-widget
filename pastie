@@ -1,0 +1,5 @@
+#!/bin/bash
+mkdir -p ~/.pastieapp/
+touch ~/.pastieapp/log
+cd /usr/share/pastieapp
+nohup python main.py 2>> ~/.pastieapp/log &
