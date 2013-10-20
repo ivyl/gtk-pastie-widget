@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.16.0 on Fri Oct 18 13:25:35 2013 -->
+<!-- Generated with glade 3.16.0 on Sun Oct 20 22:21:12 2013 -->
 <interface>
   <!-- interface-requires gtk+ 3.10 -->
   <object class="GtkWindow" id="pastie_window">
@@ -13,7 +13,6 @@
       <object class="GtkVBox" id="box1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkMenuBar" id="menu_bar">
             <property name="visible">True</property>
@@ -98,6 +97,7 @@
           <object class="GtkHBox" id="box2">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
             <child>
               <object class="GtkComboBox" id="language_select_box">
                 <property name="visible">True</property>

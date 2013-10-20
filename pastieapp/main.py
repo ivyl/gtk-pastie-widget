@@ -72,7 +72,8 @@ class PastieTray():
 
 class PastieWindow:
     ATTRS = [ "pastie_window", "hide_widget_item", "close_widget_item", "about_item",
-            "textview", "language_select_box", "private_check", "spinner", "paste_button" ]
+            "textview", "language_select_box", "private_check", "spinner", "paste_button",
+            "menu_bar" ]
 
     def __init__(self):
         self.hidden = True
@@ -114,7 +115,6 @@ class PastieWindow:
         self.pastie_window.set_size_request(315, 150)
         self.pastie_window.show()
         self.textview.grab_focus()
-        self.enable()
 
     def toggle(self, widget=None, event=None):
         if self.hidden:
@@ -134,12 +134,14 @@ class PastieWindow:
         self.paste_button.set_sensitive(False)
         self.private_check.set_sensitive(False)
         self.language_select_box.set_sensitive(False)
+        self.menu_bar.set_sensitive(False)
 
     def enable(self):
         self.textview.set_sensitive(True)
         self.paste_button.set_sensitive(True)
         self.private_check.set_sensitive(True)
         self.language_select_box.set_sensitive(True)
+        self.menu_bar.set_sensitive(False)
 
     @property
     def text(self):
@@ -182,7 +184,13 @@ class Pastie:
         clipboard.set_text(url)
         clipboard.store()
 
-        gobject.idle_add(self.window.hide)
+        gobject.idle_add(self.__async_finish)
+
+    def __async_finish(self):
+        self.window.hide()
+        self.enable()
+        return False
+
 
     def __setup_langs(self):
         for lang in PastieClient.LANGS:
