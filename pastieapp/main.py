@@ -166,15 +166,6 @@ class Pastie:
         self.tray.show()
         self.__hook_events()
         self.__setup_langs()
-
-    def paste(self, ev):
-        self.window.spin()
-        self.window.disable()
-        language = self.window.language
-        text = self.window.text
-        private = self.window.is_priavate
-
-        threading.Thread(target=self.__async_paste, args=(language, text, private)).start()
     
     def __async_paste(self, language, text, private):
         p = PastieClient(text, language, private)
@@ -201,9 +192,38 @@ class Pastie:
     def __hook_events(self):
         self.tray.connect(self.window.toggle)
         self.window.paste_button.connect("clicked", self.paste)
-    
+        self.window.about_item.connect("activate", self.run_help_dialog)
 
-pastie = Pastie()
+    def paste(self, ev):
+        self.window.spin()
+        self.window.disable()
+        language = self.window.language
+        text = self.window.text
+        private = self.window.is_priavate
 
-gtk.gdk.threads_init()
-gtk.main()
+        threading.Thread(target=self.__async_paste, args=(language, text, private)).start()
+
+    def run_help_dialog(self, ev = None):
+        message = """
+        Wpisz swój tekst w pole, wybież język z listy, zaznacz czy wklejka ma być prwyatna (długi, unikalny link, nie jest widziana na stronie wśród ostantio wstawionych) 
+        i wklej go na http://pastie.org.
+
+        Okno chowa się automatycznie. Link jest umieszczany w schowku sytemowym.
+
+        Program można zamknąć z menu.
+        """
+
+        about = gtk.AboutDialog()
+        about.set_program_name("Widżet Pastie")
+        about.set_copyright("(c) Arkadiusz Hiler 2013")
+        about.set_version("0.1")
+        about.set_comments(message)
+        about.set_website("http://www.hiler.pl")
+        about.set_logo(gtk.gdk.pixbuf_new_from_file("pastie.gif"))
+        about.run()
+        about.destroy()
+
+if __name__ == "__main__":
+    pastie = Pastie()
+    gtk.gdk.threads_init()
+    gtk.main()
