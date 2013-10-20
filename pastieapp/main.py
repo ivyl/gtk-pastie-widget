@@ -1,8 +1,9 @@
 #!/usr/bin/env python2
 # -*- coding: utf8 -*-
-import gtk, gtk.glade
+import gtk, gtk.glade, gobject
 import urllib2
 import urllib
+import threading
 from IPython import embed
 
 class PastieClient:
@@ -13,7 +14,7 @@ class PastieClient:
         'PHP':'php', 'SQL':'sql', 'Shell Script':'shell-unix-generic'
     }
 
-    LANGS = ('Ruby (on Rails)', 'Ruby', 'Python', 'Plain Text', 'ActionScript', 'C/C++', 'CSS', 'Diff', 'HTML (Rails)', 'HTML / XML', 'Java', 'JavaScript', 'Objective C/C++', 'PHP', 'SQL', 'Shell Script')
+    LANGS = ('Plain Text', 'Ruby (on Rails)', 'Ruby', 'Python', 'ActionScript', 'C/C++', 'CSS', 'Diff', 'HTML (Rails)', 'HTML / XML', 'Java', 'JavaScript', 'Objective C/C++', 'PHP', 'SQL', 'Shell Script')
          
     URL = 'http://pastie.org/pastes'
 
@@ -22,9 +23,9 @@ class PastieClient:
         self.syntax = syntax
         self.private = private
 
-    def __send_request(self, params):
+    def __send_request(self, opener, params):
         data = urllib.urlencode(params)
-        request = urllib2.Request(URL, data)
+        request = urllib2.Request(self.__class__.URL, data)
         request.add_header('User-Agent', 'PastiePythonClass/1.0 +http://hiler.pl/')
 
         try:
@@ -35,7 +36,7 @@ class PastieClient:
             return firstdatastream.url
 
     def paste(self):
-        if not PASTES.has_key(self.syntax):
+        if not self.__class__.PASTES.has_key(self.syntax):
             return 'Zły język.'
         
         opener = urllib2.build_opener()
@@ -50,7 +51,7 @@ class PastieClient:
         else:
             params['paste[restricted]'] = '0'
 
-        return self.__send_request(params)
+        return self.__send_request(opener, params)
             
             
 
@@ -71,7 +72,7 @@ class PastieTray():
 
 class PastieWindow:
     ATTRS = [ "pastie_window", "hide_widget_item", "close_widget_item", "about_item",
-            "textview", "language_select_box", "private_check" "spinner", "paste_button" ]
+            "textview", "language_select_box", "private_check", "spinner", "paste_button" ]
 
     def __init__(self):
         self.hidden = True
@@ -85,6 +86,13 @@ class PastieWindow:
             obj = self.builder.get_object(attr)
             setattr(self, attr, obj)
 
+        combobox = self.language_select_box
+        liststore = gtk.ListStore(gobject.TYPE_STRING)
+        combobox.set_model(liststore)
+        cell = gtk.CellRendererText()
+        combobox.pack_start(cell, True)
+        combobox.add_attribute(cell, 'text', 0)
+
     def __hook_events(self):
         self.pastie_window.connect("delete_event", self.hide)
         self.hide_widget_item.connect("activate", self.hide)
@@ -95,6 +103,10 @@ class PastieWindow:
         self.pastie_window.hide()
         self.textview.get_buffer().set_text('')
         self.private_check.set_active(False)
+
+        self.spinner.stop()
+        self.spinner.set_visible(False)
+
         return True #for delete_event, it will save window from destroying
 
     def show(self, widget=None, event=None):
@@ -102,12 +114,32 @@ class PastieWindow:
         self.pastie_window.set_size_request(315, 150)
         self.pastie_window.show()
         self.textview.grab_focus()
+        self.enable()
 
     def toggle(self, widget=None, event=None):
         if self.hidden:
             self.show()
         else:
             self.hide()
+
+    def add_language(self, lang):
+        self.language_select_box.append_text(lang)
+
+    def spin(self):
+        self.spinner.set_visible(True)
+        self.spinner.start()
+
+    def disable(self):
+        self.textview.set_sensitive(False)
+        self.paste_button.set_sensitive(False)
+        self.private_check.set_sensitive(False)
+        self.language_select_box.set_sensitive(False)
+
+    def enable(self):
+        self.textview.set_sensitive(True)
+        self.paste_button.set_sensitive(True)
+        self.private_check.set_sensitive(True)
+        self.language_select_box.set_sensitive(True)
 
     @property
     def text(self):
@@ -131,27 +163,32 @@ class Pastie:
         self.tray = PastieTray()
         self.tray.show()
         self.__hook_events()
+        self.__setup_langs()
 
     def paste(self, ev):
-        text = self.window.text
+        self.window.spin()
+        self.window.disable()
         language = self.window.language
-        priavate = self.window.is_priavate
+        text = self.window.text
+        private = self.window.is_priavate
 
-        clipboard = gtk.clipboard_get('CLIPBOARD')
-        
-        p = pastie.Pastie(text, language, priv)
+        threading.Thread(target=self.__async_paste, args=(language, text, private)).start()
+    
+    def __async_paste(self, language, text, private):
+        p = PastieClient(text, language, private)
         url = p.paste()
 
+        clipboard = gtk.clipboard_get('CLIPBOARD')
         clipboard.set_text(url)
         clipboard.store()
 
-        self.window.hide()
-    
-    def _setup_langs(self):
-        for lang in pastie.LANGS:
-            self.syntaxlist.append_text(lang)
+        gobject.idle_add(self.window.hide)
 
-        self.syntaxlist.set_active(3) #sets active posision in syntax list
+    def __setup_langs(self):
+        for lang in PastieClient.LANGS:
+            self.window.add_language(lang)
+
+        self.window.language_select_box.set_active(0)
 
     def __hook_events(self):
         self.tray.connect(self.window.toggle)
@@ -160,4 +197,5 @@ class Pastie:
 
 pastie = Pastie()
 
+gtk.gdk.threads_init()
 gtk.main()
