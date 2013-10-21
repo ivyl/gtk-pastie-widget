@@ -1,10 +1,17 @@
 #!/usr/bin/env python2
 # -*- coding: utf8 -*-
+
 import gtk, gtk.glade, gobject
+import inspect, os
+import threading
 import urllib2
 import urllib
-import threading
-from IPython import embed
+
+def resource_path(resource_name):
+    relative_path =  inspect.getfile(inspect.currentframe())
+    real_path = os.path.realpath(relative_path)
+    real_dir = os.path.dirname(real_path)
+    return os.path.join(real_dir, resource_name)
 
 class PastieClient:
     PASTES = { 'Ruby (on Rails)':'ruby_on_rails', 'Ruby':'ruby', 'Python':'python',
@@ -14,7 +21,9 @@ class PastieClient:
         'PHP':'php', 'SQL':'sql', 'Shell Script':'shell-unix-generic'
     }
 
-    LANGS = ('Plain Text', 'Ruby (on Rails)', 'Ruby', 'Python', 'ActionScript', 'C/C++', 'CSS', 'Diff', 'HTML (Rails)', 'HTML / XML', 'Java', 'JavaScript', 'Objective C/C++', 'PHP', 'SQL', 'Shell Script')
+    LANGS = ('Plain Text', 'Ruby (on Rails)', 'Ruby', 'Python', 'ActionScript',
+        'C/C++', 'CSS', 'Diff', 'HTML (Rails)', 'HTML / XML', 'Java',
+        'JavaScript', 'Objective C/C++', 'PHP', 'SQL', 'Shell Script')
          
     URL = 'http://pastie.org/pastes'
 
@@ -31,19 +40,19 @@ class PastieClient:
         try:
             firstdatastream = opener.open(request)
         except:
-            return 'Coś poszło nie tak, przepraszamy.'
+            return 'Something went wrong, sorry.'
         else:
             return firstdatastream.url
 
     def paste(self):
         if not self.__class__.PASTES.has_key(self.syntax):
-            return 'Zły język.'
+            return 'Worng language.'
         
         opener = urllib2.build_opener()
         params = {
                   'paste[body]':self.text,
                   'paste[parser]': self.__class__.PASTES[self.syntax],
-                  'paste[authorization]':'burger' #pastie protecion against general spam bots
+                  'paste[authorization]':'burger'
                   }
 
         if self.private:
@@ -57,8 +66,9 @@ class PastieClient:
 
 class PastieTray():
     def __init__(self, image=None):
+
         self.tray = gtk.StatusIcon()
-        self.tray.set_from_file('pastie.gif')
+        self.tray.set_from_file(resource_path('pastie.gif'))
         
     def show(self):
         self.tray.set_visible(True)
@@ -71,14 +81,13 @@ class PastieTray():
 
 
 class PastieWindow:
-    ATTRS = [ "pastie_window", "hide_widget_item", "close_widget_item", "about_item",
-            "textview", "language_select_box", "private_check", "spinner", "paste_button",
-            "menu_bar" ]
+    ATTRS = [ "pastie_window",  "textview", "language_select_box",
+            "private_check", "spinner", "paste_button" ]
 
     def __init__(self):
         self.hidden = True
         self.builder = gtk.Builder()
-        self.builder.add_from_file("pastie.glade")
+        self.builder.add_from_file(resource_path("pastie.glade"))
         self.__build_attributes()
         self.__hook_events()
 
@@ -96,8 +105,6 @@ class PastieWindow:
 
     def __hook_events(self):
         self.pastie_window.connect("delete_event", self.hide)
-        self.hide_widget_item.connect("activate", self.hide)
-        self.close_widget_item.connect("activate", gtk.main_quit)
 
     def hide(self, widget=None, event=None):
         self.hidden = True
@@ -192,7 +199,6 @@ class Pastie:
     def __hook_events(self):
         self.tray.connect(self.window.toggle)
         self.window.paste_button.connect("clicked", self.paste)
-        self.window.about_item.connect("activate", self.run_help_dialog)
 
     def paste(self, ev):
         self.window.spin()
@@ -203,25 +209,6 @@ class Pastie:
 
         threading.Thread(target=self.__async_paste, args=(language, text, private)).start()
 
-    def run_help_dialog(self, ev = None):
-        message = """
-        Wpisz swój tekst w pole, wybież język z listy, zaznacz czy wklejka ma być prwyatna (długi, unikalny link, nie jest widziana na stronie wśród ostantio wstawionych) 
-        i wklej go na http://pastie.org.
-
-        Okno chowa się automatycznie. Link jest umieszczany w schowku sytemowym.
-
-        Program można zamknąć z menu.
-        """
-
-        about = gtk.AboutDialog()
-        about.set_program_name("Widżet Pastie")
-        about.set_copyright("(c) Arkadiusz Hiler 2013")
-        about.set_version("0.1")
-        about.set_comments(message)
-        about.set_website("http://www.hiler.pl")
-        about.set_logo(gtk.gdk.pixbuf_new_from_file("pastie.gif"))
-        about.run()
-        about.destroy()
 
 if __name__ == "__main__":
     pastie = Pastie()
