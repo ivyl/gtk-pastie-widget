@@ -1,22 +1,26 @@
 # gtk-pastie-widget
 
-## Requiements:
+## Screenshot
+![][widget]
+[widget]: http://i.imgur.com/OmdqIyB.png
+
+## Requiements
 
 * Python
 * PyGTK
 
-## Install:
+## Install
 * `git clone`
-* `ln -s pastie.py SOMEWHERE_IN_YOUR_PATH/pastie`
+* `ln -s $(pwd)/pastie.py SOMEWHERE_IN_YOUR_PATH/pastie`
 
-Run throught symlink.
+Run through symlink.
 
-## Pasting:
+## Pasting
 
 Just paste your code into the text area (it automatically get focus) and
 press paste. Link to your code will be stored in the clipboard
     
-## Stuff:
+## Stuff
 
 [Pastie](http://pastie.org) is a name of NOPASTE service. Icon is image that
 is used on front page of pastie site.
